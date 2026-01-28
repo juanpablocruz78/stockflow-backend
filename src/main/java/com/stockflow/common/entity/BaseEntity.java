@@ -21,6 +21,20 @@ public abstract class BaseEntity {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+        this.active = true;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
+
     public Long getId() {
         return id;
     }
@@ -43,5 +57,17 @@ public abstract class BaseEntity {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 }

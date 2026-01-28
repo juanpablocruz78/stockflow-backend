@@ -1,5 +1,6 @@
 package com.stockflow.inventory.dto;
 
+
 import java.math.BigDecimal;
 import java.time.Instant;
 

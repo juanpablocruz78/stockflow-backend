@@ -1,58 +1,55 @@
 package com.stockflow.inventory.service;
 
+import com.stockflow.common.exception.ResourceNotFoundException;
 import com.stockflow.inventory.dto.ProductRequest;
 import com.stockflow.inventory.dto.ProductResponse;
 import com.stockflow.inventory.entity.Product;
+import com.stockflow.inventory.mapper.ProductMapper;
 import com.stockflow.inventory.repository.ProductRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 @Transactional
 public class ProductService {
     private final ProductRepository productRepository;
+    private final ProductMapper mapper;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, ProductMapper mapper) {
         this.productRepository = productRepository;
+        this.mapper = mapper;
     }
 
-    public ProductResponse create(ProductRequest request) {
-        if (productRepository.existsByName(request.getName())) {
+    public Product create(ProductRequest request) {
+        if (productRepository.existsByNameAndActiveTrue(request.getName())) {
             throw new IllegalArgumentException("Product already exists");
         }
-        if (request.getStock() < 0) {
-            throw new IllegalArgumentException("Stock cannot be negative");
-        }
-        if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Price must be greater than zero");
-        }
+        Product product = mapper.toEntity(request);
+        return productRepository.save(product);
 
-        Product product = new Product();
-        product.setName(request.getName());
-        product.setStock(request.getStock());
-        product.setPrice(request.getPrice());
-
-        Product saved =  productRepository.save(product);
-        return toResponse(saved);
     }
 
-    public List<ProductResponse> findAll() {
-        return productRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<Product> findAll(Pageable pageable) {
+        return productRepository.findByActiveTrue(pageable);
     }
 
-    private ProductResponse toResponse(Product product) {
-        ProductResponse response = new ProductResponse();
-        response.setId(product.getId());
-        response.setName(product.getName());
-        response.setStock(product.getStock());
-        response.setPrice(product.getPrice());
-        response.setCreatedAt(product.getCreatedAt());
-        return response;
+    public void delete(Long id) {
+        Product product = productRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        product.deactivate();
+        productRepository.save(product);
+    }
+
+    public Product update(Long id, ProductRequest request) {
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        mapper.updateEntityFromRequest(request, product);
+        return productRepository.save(product);
     }
 }
