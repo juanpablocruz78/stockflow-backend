@@ -23,17 +23,26 @@ public class ProductService {
         this.mapper = mapper;
     }
 
-    public Product create(ProductRequest request) {
+    public Product  create(ProductRequest request) {
         if (productRepository.existsByNameAndActiveTrue(request.getName())) {
             throw new IllegalArgumentException("Product already exists");
         }
         Product product = mapper.toEntity(request);
+
         return productRepository.save(product);
 
     }
 
     public Page<Product> findAll(Pageable pageable) {
         return productRepository.findByActiveTrue(pageable);
+    }
+
+    public ProductResponse getById(Long id) {
+
+        Product product = productRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        return mapper.toResponse(product);
     }
 
     public void delete(Long id) {

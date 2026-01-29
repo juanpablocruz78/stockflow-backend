@@ -5,6 +5,12 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 public class ProductRequest {
+    public ProductRequest(String name, Integer stock, BigDecimal price) {
+        this.name = name;
+        this.stock = stock;
+        this.price = price;
+    }
+
     @NotBlank(message = "Name is required")
     @Size(max = 100, message = "Name must be at most 100 characters")
     private String name;

@@ -5,10 +5,22 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "products")
 public class Product extends BaseEntity {
+    public Product() {
+    }
+
+    public Product(String name, Integer stock, BigDecimal price, String description, Boolean active, Instant now) {
+        this.name = name;
+        this.stock = stock;
+        this.price = price;
+        this.description = description;
+        this.active = active;
+    }
+
     @NotBlank
     @Column(nullable = false, length = 150)
     private String name;
@@ -79,5 +91,10 @@ public class Product extends BaseEntity {
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (active == null) active = true;
     }
 }

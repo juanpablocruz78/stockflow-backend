@@ -5,6 +5,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public class ProductResponse {
+    public ProductResponse(Long id, String name, Integer stock, BigDecimal price, Instant createdAt) {
+        this.id = id;
+        this.name = name;
+        this.stock = stock;
+        this.price = price;
+        this.createdAt = createdAt;
+    }
+
     private Long id;
     private String name;
     private Integer stock;

@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -24,11 +25,12 @@ public class ProductController {
     }
 
     @PostMapping
-    public ProductResponse create(
+    public ResponseEntity<ProductResponse> create(
             @Valid @RequestBody ProductRequest request
     ) {
         Product product = productService.create(request);
-        return mapper.toResponse(product);
+        ProductResponse response = mapper.toResponse(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -52,5 +54,11 @@ public class ProductController {
 
         Product product = productService.update(id, request);
         return mapper.toResponse(product);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponse> getById(@PathVariable Long id) {
+        ProductResponse product = productService.getById(id);
+        return ResponseEntity.ok(product);
     }
 }
