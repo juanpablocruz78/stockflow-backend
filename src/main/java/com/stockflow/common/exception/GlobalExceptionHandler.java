@@ -1,48 +1,120 @@
 package com.stockflow.common.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import com.stockflow.common.dto.ApiError;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Instant;
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    //  Validaciones @Valid
+    // VALIDATION 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationErrors(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
 
-        Map<String, String> errors = new HashMap<>();
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(e -> e.getField() + " " + e.getDefaultMessage())
+                .orElse("Validation error");
 
-        ex.getBindingResult().getFieldErrors()
-                .forEach(error ->
-                        errors.put(error.getField(), error.getDefaultMessage())
-                );
-
-        return ResponseEntity.badRequest().body(errors);
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        400,
+                        message,
+                        request.getRequestURI(),
+                        Instant.now()
+                ));
     }
 
-    //  Recurso no encontrado
+    // 404
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request) {
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(404, ex.getMessage()));
+                .body(new ErrorResponse(
+                        404,
+                        ex.getMessage(),
+                        request.getRequestURI(),
+                        Instant.now()
+                ));
     }
 
-    //  Conflicto de negocio
+    // 409
     @ExceptionHandler(ProductAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(ProductAlreadyExistsException ex) {
+    public ResponseEntity<ErrorResponse> handleConflict(
+            ProductAlreadyExistsException ex,
+            HttpServletRequest request) {
+
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse(409, ex.getMessage()));
+                .body(new ErrorResponse(
+                        409,
+                        ex.getMessage(),
+                        request.getRequestURI(),
+                        Instant.now()
+                ));
     }
 
-    //  Error inesperado
+    // 500
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+    public ResponseEntity<ErrorResponse> handleGeneral(
+            Exception ex,
+            HttpServletRequest request) {
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(500, "Unexpected error occurred"));
+                .body(new ErrorResponse(
+                        500,
+                        "Unexpected error occurred",
+                        request.getRequestURI(),
+                        Instant.now()
+                ));
     }
+
+    /*  403 - Forbidden */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiError(
+                        403,
+                        "FORBIDDEN",
+                        "No tienes permisos para acceder a este recurso",
+                        request.getRequestURI(),
+                        LocalDateTime.now()
+                ));
+    }
+
+    /*  401 - Unauthorized */
+    @ExceptionHandler({
+            AuthenticationException.class,
+            BadCredentialsException.class
+    })
+    public ResponseEntity<ApiError> handleUnauthorized(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiError(
+                        401,
+                        "UNAUTHORIZED",
+                        "Credenciales inválidas o token no válido",
+                        request.getRequestURI(),
+                        LocalDateTime.now()
+                ));
+    }
+
 }

@@ -5,12 +5,14 @@ import java.time.Instant;
 public class ErrorResponse {
     private int status;
     private String message;
+    private String path;
     private Instant timestamp;
 
-    public ErrorResponse(int status, String message) {
+    public ErrorResponse(int status, String message, String path, Instant timestamp) {
         this.status = status;
         this.message = message;
-        this.timestamp = Instant.now();
+        this.path = path;
+        this.timestamp = timestamp;
     }
 
     public int getStatus() {
@@ -35,5 +37,13 @@ public class ErrorResponse {
 
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }
