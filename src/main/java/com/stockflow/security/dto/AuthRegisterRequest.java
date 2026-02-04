@@ -1,6 +1,8 @@
 package com.stockflow.security.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.*;
+
+import java.util.Set;
 
 public record AuthRegisterRequest(
         @NotBlank
@@ -12,7 +14,7 @@ public record AuthRegisterRequest(
         @NotBlank
         String password,
 
-        @NotBlank
-        String role
+        @NotEmpty
+        Set<String> roles   // ["USER", "ADMIN"]
 ) {
 }
