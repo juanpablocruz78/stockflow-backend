@@ -6,11 +6,16 @@ import com.stockflow.inventory.dto.ProductResponse;
 import com.stockflow.inventory.entity.Product;
 import com.stockflow.inventory.mapper.ProductMapper;
 import com.stockflow.inventory.service.ProductService;
+import com.stockflow.security.jwt.JwtAuthenticationFilter;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +32,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ProductController.class)
+@WebMvcTest(
+        controllers = ProductController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class
+        )
+)
+@AutoConfigureMockMvc(addFilters = false)
+
 class ProductControllerTest {
 
     @Autowired
@@ -95,7 +108,10 @@ class ProductControllerTest {
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.path").value("/api/products"));
     }
 
     @Test
@@ -147,17 +163,14 @@ class ProductControllerTest {
                 10,
                 BigDecimal.valueOf(1200)
         );
-        request.setName("Test");
-        request.setStock(1);
-        request.setPrice(BigDecimal.ONE);
 
         Mockito.when(productService.update(Mockito.eq(99L), Mockito.any()))
-                .thenThrow(new RuntimeException("Product not found"));
+                .thenThrow(new EntityNotFoundException("Product not found"));
 
         mockMvc.perform(put("/api/products/99")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isNotFound());
     }
 
 

@@ -5,6 +5,7 @@ import com.stockflow.security.entity.User;
 import com.stockflow.security.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,8 +21,9 @@ public class RefreshTokenService {
         this.repository = repository;
     }
 
+    @Transactional
     public RefreshToken create(User user) {
-        repository.deleteByUser(user); // 1 sesión activa (opcional)
+        repository.deleteByUser(user.getId()); // 1 sesión activa (opcional)
 
         RefreshToken token = new RefreshToken();
         token.setUser(user);
@@ -44,4 +46,33 @@ public class RefreshTokenService {
 
         return rt;
     }
+
+    @Transactional
+    public RefreshToken rotate(String oldToken) {
+
+        RefreshToken existing = verify(oldToken);
+
+        User user = existing.getUser();
+
+        repository.deleteByUser(user.getId());
+
+        RefreshToken newToken = new RefreshToken();
+        newToken.setUser(user);
+        newToken.setToken(UUID.randomUUID().toString());
+        newToken.setExpiryDate(
+                Instant.now().plusMillis(refreshExpiration)
+        );
+
+        return repository.save(newToken);
+    }
+
+    @Transactional
+    public void deleteByToken(String token) {
+
+        RefreshToken refreshToken = repository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Refresh token inválido"));
+
+        repository.delete(refreshToken);
+    }
+
 }

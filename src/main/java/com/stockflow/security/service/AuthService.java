@@ -3,6 +3,7 @@ package com.stockflow.security.service;
 import com.stockflow.security.dto.AuthRegisterRequest;
 import com.stockflow.security.dto.AuthRequest;
 import com.stockflow.security.dto.AuthResponse;
+import com.stockflow.security.entity.RefreshToken;
 import com.stockflow.security.entity.Role;
 import com.stockflow.security.entity.User;
 import com.stockflow.security.jwt.JwtService;
@@ -70,4 +71,26 @@ public class AuthService {
 
         return new AuthResponse(accessToken, refreshToken);
     }
+
+    public AuthResponse refresh(String refreshToken) {
+
+        RefreshToken newRefreshToken =
+                refreshTokenService.rotate(refreshToken);
+
+        User user = newRefreshToken.getUser();
+
+        String newAccessToken =
+                jwtService.generateToken(user.getUsername());
+
+        return new AuthResponse(
+                newAccessToken,
+                newRefreshToken.getToken()
+        );
+    }
+
+    public void logout(String refreshToken) {
+        refreshTokenService.deleteByToken(refreshToken);
+    }
+
+
 }
