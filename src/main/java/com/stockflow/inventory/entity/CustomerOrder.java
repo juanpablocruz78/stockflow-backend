@@ -1,21 +1,120 @@
 package com.stockflow.inventory.entity;
 
-import com.stockflow.common.entity.BaseEntity;
+import com.stockflow.inventory.enums.OrderStatus;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
-@Table(name = "orders")
-public class CustomerOrder extends BaseEntity {
+@Table(name = "customer_orders")
+public class CustomerOrder {
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(nullable = false)
-    private String status;
+    private Long customerId;
 
-    @Column(nullable = false, precision = 14, scale = 2)
-    private BigDecimal totalAmount;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+
+    private LocalDateTime createdAt;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "order_id")
+    private List<OrderItem> items = new ArrayList<>();
+
+    protected CustomerOrder() {
+        // JPA
+    }
+
+    public CustomerOrder(Long customerId) {
+        this.customerId = customerId;
+        this.status = OrderStatus.CREATED;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    // =========================
+    // BEHAVIOR (Business Logic)
+    // =========================
+
+    public void addItem(Product product, Integer quantity) {
+
+        ensureOrderIsModifiable();
+
+        OrderItem item = new OrderItem(this, product, quantity, product.getPrice());
+
+        items.add(item);
+
+        recalculateTotal();
+    }
+
+    public void removeItem(Long productId) {
+
+        ensureOrderIsModifiable();
+
+        items.removeIf(item -> item.getProduct().getId().equals(productId));
+
+        recalculateTotal();
+    }
+
+    public void confirm() {
+        if (items.isEmpty()) {
+            throw new IllegalStateException("Cannot confirm order without items");
+        }
+
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only created orders can be confirmed");
+        }
+
+        this.status = OrderStatus.CONFIRMED;
+    }
+
+    public void cancel() {
+
+        if (status == OrderStatus.SHIPPED) {
+            throw new IllegalStateException("Cannot cancel shipped order");
+        }
+
+        this.status = OrderStatus.CANCELLED;
+    }
+
+    private void ensureOrderIsModifiable() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Order cannot be modified in current state");
+        }
+    }
+
+    private void recalculateTotal() {
+        this.totalAmount = items.stream()
+                .map(OrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // =========================
+    // GETTERS
+    // =========================
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public List<OrderItem> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+
+    public Long getCustomerId() {
+        return customerId;
+    }
 }
+

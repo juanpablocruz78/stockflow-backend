@@ -25,13 +25,19 @@ public class JwtAuthenticationEntryPoint  implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         String errorType = (String) request.getAttribute("jwt_error");
 
-        String message = switch (errorType) {
-            case "TOKEN_EXPIRED" -> "El token ha expirado";
-            case "TOKEN_MALFORMED" -> "El token está mal formado";
-            case "TOKEN_SIGNATURE_INVALID" -> "La firma del token es inválida";
-            case "TOKEN_UNSUPPORTED" -> "Token no soportado";
-            default -> "Token ausente o inválido";
-        };
+        String message;
+
+        if (errorType == null) {
+            message = "Token ausente o inválido";
+        } else {
+            message = switch (errorType) {
+                case "TOKEN_EXPIRED" -> "El token ha expirado";
+                case "TOKEN_MALFORMED" -> "El token está mal formado";
+                case "TOKEN_SIGNATURE_INVALID" -> "La firma del token es inválida";
+                case "TOKEN_UNSUPPORTED" -> "Token no soportado";
+                default -> "Token ausente o inválido";
+            };
+        }
 
         ApiError error = new ApiError(
                 401,

@@ -170,8 +170,32 @@ class ProductControllerTest {
         mockMvc.perform(put("/api/products/99")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Product not found"))
+                .andExpect(jsonPath("$.path").value("/api/products/99"));
     }
+
+    @Test
+    void shouldReturnValidationErrors() throws Exception {
+
+        ProductRequest request = new ProductRequest(
+                "", // inválido
+                -5, // inválido
+                BigDecimal.ZERO // inválido
+        );
+
+        mockMvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors.name").exists())
+                .andExpect(jsonPath("$.errors.stock").exists())
+                .andExpect(jsonPath("$.errors.price").exists());
+    }
+
 
 
 }

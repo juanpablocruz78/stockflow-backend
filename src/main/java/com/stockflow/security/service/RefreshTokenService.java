@@ -2,6 +2,7 @@ package com.stockflow.security.service;
 
 import com.stockflow.security.entity.RefreshToken;
 import com.stockflow.security.entity.User;
+import com.stockflow.security.exception.InvalidRefreshTokenException;
 import com.stockflow.security.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -37,11 +38,11 @@ public class RefreshTokenService {
 
     public RefreshToken verify(String token) {
         RefreshToken rt = repository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if (rt.getExpiryDate().isBefore(Instant.now())) {
             repository.delete(rt);
-            throw new RuntimeException("Refresh token expired");
+            throw new InvalidRefreshTokenException("Refresh token expired");
         }
 
         return rt;
@@ -70,7 +71,7 @@ public class RefreshTokenService {
     public void deleteByToken(String token) {
 
         RefreshToken refreshToken = repository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Refresh token inválido"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token inválido"));
 
         repository.delete(refreshToken);
     }
