@@ -2,9 +2,11 @@ package com.stockflow.inventory.controller;
 
 import com.stockflow.inventory.dto.*;
 import com.stockflow.inventory.entity.CustomerOrder;
+import com.stockflow.inventory.enums.OrderStatus;
 import com.stockflow.inventory.mapper.OrderMapper;
 import com.stockflow.inventory.service.CustomerOrderService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,5 +73,19 @@ public class CustomerOrderController {
         service.cancelOrder(orderId);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<OrderResponse>> getOrders(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<OrderResponse> response = service.getOrders(status, pageable)
+                .map(OrderMapper::toResponse);
+
+        return ResponseEntity.ok(response);
     }
 }

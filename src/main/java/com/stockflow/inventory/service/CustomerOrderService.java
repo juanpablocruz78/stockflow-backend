@@ -7,6 +7,7 @@ import com.stockflow.inventory.enums.OrderStatus;
 import com.stockflow.inventory.repository.CustomerOrderRepository;
 import com.stockflow.inventory.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -144,5 +145,14 @@ public class CustomerOrderService {
         if (!product.getActive()) {
             throw new IllegalStateException("Product is not active");
         }
+    }
+
+    public Page<CustomerOrder> getOrders(OrderStatus status, Pageable pageable) {
+
+        if (status != null) {
+            return orderRepository.findAllByStatus(status, pageable);
+        }
+
+        return orderRepository.findAll(pageable);
     }
 }
