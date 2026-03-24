@@ -76,16 +76,12 @@ public class CustomerOrderController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<OrderResponse>> getOrders(
-            @RequestParam(required = false) OrderStatus status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public Page<OrderResponseDTO> getOrders(
+            @RequestParam int page,
+            @RequestParam int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<OrderResponse> response = service.getOrders(status, pageable)
-                .map(OrderMapper::toResponse);
-
-        return ResponseEntity.ok(response);
+        return service.getOrders(pageable);
     }
 }

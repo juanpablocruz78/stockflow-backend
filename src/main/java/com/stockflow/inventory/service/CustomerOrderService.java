@@ -1,5 +1,6 @@
 package com.stockflow.inventory.service;
 
+import com.stockflow.inventory.dto.OrderResponseDTO;
 import com.stockflow.inventory.entity.CustomerOrder;
 import com.stockflow.inventory.entity.OrderItem;
 import com.stockflow.inventory.entity.Product;
@@ -147,12 +148,14 @@ public class CustomerOrderService {
         }
     }
 
-    public Page<CustomerOrder> getOrders(OrderStatus status, Pageable pageable) {
+    public Page<OrderResponseDTO> getOrders(Pageable pageable) {
 
-        if (status != null) {
-            return orderRepository.findAllByStatus(status, pageable);
-        }
-
-        return orderRepository.findAll(pageable);
+        return orderRepository.findAll(pageable)
+                .map(order -> new OrderResponseDTO(
+                        order.getId(),
+                        order.getStatus().name(),
+                        order.getTotalAmount(),
+                        order.getCreatedAt()
+                ));
     }
 }
