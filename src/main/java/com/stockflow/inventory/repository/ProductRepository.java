@@ -12,4 +12,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByIdAndActiveTrue(Long id);
 
     boolean existsByNameAndActiveTrue(String name);
+
+    long countByStockLessThan(int stock);
 }
