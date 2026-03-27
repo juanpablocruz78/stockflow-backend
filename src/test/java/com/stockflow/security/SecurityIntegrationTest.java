@@ -9,6 +9,7 @@ import com.stockflow.security.entity.User;
 import com.stockflow.security.repository.RefreshTokenRepository;
 import com.stockflow.security.repository.RoleRepository;
 import com.stockflow.security.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -62,6 +63,20 @@ public class SecurityIntegrationTest {
     @Test
     void shouldAllowAccessWithValidToken() throws Exception {
 
+        // 1. PREPARAR: Crear el rol y el usuario que el test espera
+        Role roleAdmin = roleRepository.findByName("ADMIN")
+                .orElseGet(() -> {
+                            Role newRole = new Role();
+                            newRole.setName("ADMIN");
+                            return roleRepository.save(newRole);
+                        });
+
+        User admin = new User();
+        admin.setUsername("admin");
+        admin.setEmail("admin@stockflow.com");
+        admin.setPassword(passwordEncoder.encode("123456")); // ¡Importante encriptar!
+        admin.setRoles(Set.of(roleAdmin));
+        userRepository.save(admin);
         // 1️⃣ Login
         String loginRequest = """
         {
@@ -88,6 +103,20 @@ public class SecurityIntegrationTest {
 
     @Test
     void shouldRefreshTokenSuccessfully() throws Exception {
+
+        Role roleAdmin = roleRepository.findByName("ADMIN")
+                .orElseGet(() -> {
+                    Role newRole = new Role();
+                    newRole.setName("ADMIN");
+                    return roleRepository.save(newRole);
+                });
+
+        User admin = new User();
+        admin.setUsername("admin");
+        admin.setEmail("admin@stockflow.com");
+        admin.setPassword(passwordEncoder.encode("123456")); // ¡Importante encriptar!
+        admin.setRoles(Set.of(roleAdmin));
+        userRepository.save(admin);
 
         String loginRequest = """
         {
@@ -136,6 +165,7 @@ public class SecurityIntegrationTest {
     @Test
     void shouldFailWhenRefreshTokenIsExpired() throws Exception {
 
+        this.clean();
         // crear rol
         Role roleUser = roleRepository
                 .findByName("USER")
@@ -147,7 +177,7 @@ public class SecurityIntegrationTest {
 
         // crear usuario
         User user = new User();
-        user.setUsername("expiredUser");
+        user.setUsername("expiredUser_"+ UUID.randomUUID());
         user.setEmail("expired@example.com"); //  obligatorio
         user.setPassword(passwordEncoder.encode("123456"));
 
@@ -188,6 +218,7 @@ public class SecurityIntegrationTest {
 
     private String loginAndGetAccessToken() throws Exception {
 
+        this.clean();
         String username = "user_" + UUID.randomUUID();
 
         Role roleUser = roleRepository.findByName("USER")
@@ -242,6 +273,7 @@ public class SecurityIntegrationTest {
 
     private String loginAsAdminAndGetAccessToken() throws Exception {
 
+        this.clean();
         String username = "admin_" + UUID.randomUUID();
 
         Role roleAdmin = roleRepository.findByName("ADMIN")
@@ -314,6 +346,7 @@ public class SecurityIntegrationTest {
 
     private String extractRefreshTokenFromLogin() throws Exception {
 
+        this.clean();
         String username = "user_" + UUID.randomUUID();
 
         Role roleUser = roleRepository.findByName("USER")
@@ -348,4 +381,9 @@ public class SecurityIntegrationTest {
         return jsonNode.get("refreshToken").asText();
     }
 
+    @BeforeEach
+    void clean() {
+        refreshTokenRepository.deleteAll();
+        userRepository.deleteAll();
+    }
 }

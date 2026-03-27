@@ -1,8 +1,8 @@
 package com.stockflow.common.exception;
 
 import com.stockflow.security.exception.InvalidRefreshTokenException;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,10 +11,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,9 +20,9 @@ public class GlobalExceptionHandler {
     // -------------------------
     // 404 - Entidad no encontrada
     // -------------------------
-    @ExceptionHandler(ResourceNotFoundException.class)
+    @ExceptionHandler({ResourceNotFoundException.class, EntityNotFoundException.class})
     public ResponseEntity<ApiError> handleNotFound(
-            EntityNotFoundException ex,
+            Exception ex,
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
