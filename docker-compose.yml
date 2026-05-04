@@ -13,22 +13,23 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U stockuser -d stockflow" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: .
     container_name: stockflow-backend
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8081:8081"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=29C2B0CCA972A0911F43DD4E8FFB97A00A9CEB7F3897538DE0BF61CBED3DC76D
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/stockflow
-      - SPRING_DATASOURCE_USERNAME=stockuser
-      - SPRING_DATASOURCE_PASSWORD=stockpass
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT=60000
+      - SPRING_PROFILES_ACTIVE=dev
+      - JWT_SECRET=${JWT_SECRET}
 
 volumes:
   postgres_data:

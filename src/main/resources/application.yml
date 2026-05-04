@@ -9,13 +9,12 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     open-in-view: false
 
 app:
   jwt:
-    secret: ${JWT_SECRET:29C2B0CCA972A0911F43DD4E8FFB97A00A9CEB7F3897538DE0BF61CBED3DC76D}
+    secret: ${JWT_SECRET}
     refresh-expiration: 604800000
 
 server:
@@ -29,16 +28,3 @@ management:
   endpoint:
     health:
       show-details: always
-
----
-# --- PERFIL: DEVELOPMENT (lOCAL) ---
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    url: jdbc:postgresql://localhost:5432/stockflow
-    username: postgres
-    password: password123
-  jpa:
-    show-sql: true
